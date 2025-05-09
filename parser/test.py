@@ -78,7 +78,7 @@ def get_routes(filename):
         node = ast.parse(line)
         params = get_func_params(node)
         if params[0] == "^old-way/$":
-            pdb.set_trace()
+            # pdb.set_trace()
 
         #### handle include in url definition
         if( 
