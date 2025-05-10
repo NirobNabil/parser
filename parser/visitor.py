@@ -72,6 +72,7 @@ class DefinitionResolver(ast.NodeVisitor):
                     name_path.pop()
             scope.pop()
         
+        pdb.set_trace()
         raise Exception("Name not found")
 
 # --- Usage example ---

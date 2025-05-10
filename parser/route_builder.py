@@ -5,10 +5,12 @@ from . import utils
 from .visitor import DefinitionResolver
 import pdb
 
-ROOT_DIR = os.path.join("/home/twin_n/workspace/parser/", "djangotut")
+ROOT_DIR = os.path.join("/home/twin_n/workspace/parser/Django-Projects-for-beginners/To-Do_app", "ToDo_app")
 
 def get_root_url_file():
     settings_file = utils.find_file("settings.py", ROOT_DIR)
+    if settings_file is None:
+        raise Exception("settings.py not found in root directory")
     root_url_file = utils.find_name_val(open(settings_file).read(), "ROOT_URLCONF")
     if root_url_file is None:
         raise Exception("ROOT_URLCONF not found in settings.py")
@@ -32,7 +34,6 @@ class RouteBuilder(ast.NodeVisitor):
         try:
             # if result[0] is an import, check if it is django.urls.path, ensuring node.func.id is django path
             func_name = utils.get_full_func_name(node.func)
-            print(func_name)
             result = self.resolver.resolve(".".join(self.scope_stack), func_name)
             if result[0] == "import":
                 if utils.verify_import_path(result[1], func_name, "django.urls.include"):
@@ -43,7 +44,7 @@ class RouteBuilder(ast.NodeVisitor):
                     self.routes.pop()
                     for route in new_builder.routes:
                         self.routes.append(utils.join_nested_route(parent_path, route))
-                        
+
                 if utils.verify_import_path(result[1], func_name, "django.urls.path"):
                     self.routes.append(node.args[0].value)  # as its made sure node is django path so its first arg will be constant
                 elif utils.verify_import_path(result[1], func_name, "django.urls.re_path"):

@@ -22,7 +22,7 @@ gg = path
 gg2 = re_path
 
 urlpatterns = [
-    # gg('admin/', admin.site.urls),
+    gg('admin/', admin.site.urls),
     django.urls.path('dashboard/', include('myapp.urls')),
 ]
 
