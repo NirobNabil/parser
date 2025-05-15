@@ -2,11 +2,12 @@ import ast
 from . import utils
 import pdb
 
+
 class DefinitionResolver(ast.NodeVisitor):
     def __init__(self):
-        self.assignments = {'': {}}   # name -> Assign node
-        self.functions = {'': {}}     # name -> FunctionDef node
-        self.imports = {'': {}}       # name -> Import/ImportFrom node
+        self.assignments = {"": {}}  # name -> Assign node
+        self.functions = {"": {}}  # name -> FunctionDef node
+        self.imports = {"": {}}  # name -> Import/ImportFrom node
         self.scope_stack = [""]
 
     def visit_FunctionDef(self, node):
@@ -23,12 +24,18 @@ class DefinitionResolver(ast.NodeVisitor):
         for i, target in enumerate(node.targets):
             if isinstance(target, ast.Tuple):
                 if target.elts is None:
-                    raise Exception("Unhandled: multiple variable assignment target tuple no elts")
+                    raise Exception(
+                        "Unhandled: multiple variable assignment target tuple no elts"
+                    )
                 for j, t in enumerate(target.elts):
                     if isinstance(t, ast.Name):
                         if node.value.elts is None:
-                            raise Exception("Unhandled: multiple variable assignment value tuple no elts")
-                        self.assignments[".".join(self.scope_stack)][t.id] = node.value.elts[j]
+                            raise Exception(
+                                "Unhandled: multiple variable assignment value tuple no elts"
+                            )
+                        self.assignments[".".join(self.scope_stack)][t.id] = (
+                            node.value.elts[j]
+                        )
             if isinstance(target, ast.Name):
                 self.assignments[".".join(self.scope_stack)][target.id] = node.value
         self.generic_visit(node)
@@ -48,32 +55,45 @@ class DefinitionResolver(ast.NodeVisitor):
 
     def resolve(self, scope, name):
         scope = scope.split(".")
-        while( len(scope) > 0 ):
+        while len(scope) > 0:
             cur_scope = ".".join(scope)
+
+            # is an user defined function defined in current scope
             if name in self.functions[cur_scope]:
                 return ("function", self.functions[cur_scope][name])
+            # is a variable defined in current scope
             elif name in self.assignments[cur_scope]:
+                # the variable is assigned another Name, not a constant. so resolve that name
                 if isinstance(self.assignments[cur_scope][name], ast.Name):
                     return self.resolve(cur_scope, self.assignments[cur_scope][name].id)
+                # the variable is assigned a constant. so return that constant
                 elif isinstance(self.assignments[cur_scope][name], ast.Constant):
                     return ("variable", self.assignments[cur_scope][name].value)
                 else:
-                    raise Exception("Unhandled: assignment to name not name or constant")
+                    raise Exception(
+                        "Unhandled: assignment to name not name or constant"
+                    )
+            # is an import defined in current scope
             elif name in self.imports[cur_scope]:
                 return ("import", self.imports[cur_scope][name])
             else:
 
                 ## handle nested import function call like django.urls.path
-                name_path = name.split(".")[:-1]   #-1 because you cannot import a func, you always import a module
-                while( len(name_path) > 0 ):
-                    if ".".join(name_path) in self.imports[cur_scope] and isinstance(self.imports[cur_scope][".".join(name_path)], ast.Import):
+                name_path = name.split(".")[
+                    :-1
+                ]  # -1 because you cannot import a func, you always import a module
+                while len(name_path) > 0:
+                    if ".".join(name_path) in self.imports[cur_scope] and isinstance(
+                        self.imports[cur_scope][".".join(name_path)], ast.Import
+                    ):
                         return ("import", self.imports[cur_scope][".".join(name_path)])
                     # pdb.set_trace()
                     name_path.pop()
             scope.pop()
-        
+
         pdb.set_trace()
         raise Exception("Name not found")
+
 
 # --- Usage example ---
 # code = '''

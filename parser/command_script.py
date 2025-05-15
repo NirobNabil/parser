@@ -1,13 +1,14 @@
 import sys
+import os
 
-sys.path.insert(0, "/home/twin_n/workspace/parser")
-exec(
-    open(
-        "/home/twin_n/workspace/parser/django-realworld-example-app/conduit/urls.py"
-    ).read()
+# add parser package to PYTHONPATH
+sys.path.insert(0, "/home/twin_n/workspace/parser/parser")
+
+ROOT_URLCONF = (
+    "/home/twin_n/workspace/parser/django-realworld-example-app/conduit/urls.py"
 )
-exec(open("/home/twin_n/workspace/parser/parser/route_builder2.py").read())
-routes = get_routes(urlpatterns)
-with open("routes.txt", "w") as f:
-    for r in routes:
-        f.write(r + "\n")
+PROJECT_DIR = os.getcwd()
+
+# execute ROOT_URLCONF so that it's urlpatterns is visible
+exec(open(ROOT_URLCONF).read())
+exec(open("/home/twin_n/workspace/parser/parser/main.py").read())

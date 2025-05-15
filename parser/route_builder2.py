@@ -2,6 +2,7 @@ import django
 import types
 import pdb
 import re
+import inspect
 
 
 def get_route_pattern(route):
@@ -42,40 +43,41 @@ def merge_nested_routes(base_route, nested_routes):
     return routes
 
 
-def get_routes(urlpatterns):
+debug_f = open("debug", "w")
+
+
+def debug(v):
+    debug_f.write(str(v))
+    debug_f.write("\n")
+
+
+def get_routes(urlpatterns, prefix=""):
     routes = []
     for route in urlpatterns:
+        # debug(get_route_pattern(route))
 
         if isinstance(route, django.urls.resolvers.URLPattern):
-            routes.append(get_route_pattern(route))
+            try:
+                routes.append(
+                    (
+                        join_nested_route(prefix, get_route_pattern(route)),
+                        inspect.getsource(route.callback),
+                    )
+                )
+            except:
+                pdb.set_trace()
 
         elif isinstance(route, django.urls.resolvers.URLResolver):
 
-            if isinstance(route.urlconf_name, list):
-                routes.extend(
-                    merge_nested_routes(
-                        get_route_pattern(route), get_routes(route.urlconf_name)
-                    )
-                )
-
-            elif isinstance(route.urlconf_name, types.ModuleType):
-                if route.urlconf_name.urlpatterns != None:
-                    routes.extend(
-                        merge_nested_routes(
-                            get_route_pattern(route),
-                            get_routes(route.urlconf_name.urlpatterns),
-                        )
-                    )
-                else:
-                    raise Exception("unhandled: urlconf_name has no urlpattern")
-
-            else:
-                raise Exception(
-                    "unhandled: route.urlconf_name type not handled - ",
-                    type(route.urlconf_name),
-                )
+            # from https://github.com/django/django/blob/0b2ed4f7c8396c8d9aa8428a40e6b25c31312889/django/urls/resolvers.py#L724
+            # its guaratneed that route.url_patterns is a `urlpatterns` array. otherwise django itself will return an error
+            # TODO: verify this claim further
+            routes.extend(
+                get_routes(route.url_patterns, prefix=get_route_pattern(route))
+            )
 
         else:
             raise Exception("unhandled: route type not handled - ", type(route))
 
+    # debug(routes)
     return routes

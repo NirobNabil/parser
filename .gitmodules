@@ -1,0 +1,6 @@
+[submodule "django"]
+	path = django
+	url = git@github.com:django/django.git
+[submodule "django-realworld-example-app"]
+	path = django-realworld-example-app
+	url = git@github.com:gothinkster/django-realworld-example-app.git
